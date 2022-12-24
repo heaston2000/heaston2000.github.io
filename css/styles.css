@@ -38,7 +38,7 @@ body{
     justify-content: space-between;
 }
 .h-intro > div{
-    width: 50%; 
+    width: 90%; 
 }
 .selfpic{
     overflow: auto;
