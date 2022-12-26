@@ -48,6 +48,20 @@ body{
     width: 70%;
 }
 
+/* Introduction */
+#nav-blrb{
+    margin-top: 56px;
+    padding-top: 30px;
+}
+.h-nav{
+    overflow: auto;
+    display: flex;
+    justify-content: space-between;
+}
+.h-nav > div{
+    width: 90%; 
+}
+
 /* Projects */
 .btn{
     height: 24px !important;
