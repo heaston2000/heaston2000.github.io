@@ -48,7 +48,7 @@ body{
     width: 70%;
 }
 
-/* Introduction */
+/* Nav-blurb */
 #nav-blrb{
     margin-top: 56px;
     padding-top: 30px;
@@ -59,6 +59,20 @@ body{
     justify-content: space-between;
 }
 .h-nav > div{
+    width: 90%; 
+}
+
+/* Coursework */
+#coursework{
+    margin-top: 56px;
+    padding-top: 30px;
+}
+.h-course{
+    overflow: auto;
+    display: flex;
+    justify-content: space-between;
+}
+.h-course > div{
     width: 90%; 
 }
 
