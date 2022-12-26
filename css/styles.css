@@ -40,14 +40,14 @@ body{
 .h-intro > div{
     width: 90%; 
 }
-/*.selfpic{
+.selfpic{
     overflow: auto;
     text-align: center;
 }
 #selfpic{
-    width: 50%;
+    width: 70%;
 }
-*/
+
 /* Projects */
 .btn{
     height: 24px !important;
