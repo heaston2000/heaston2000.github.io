@@ -92,6 +92,18 @@ body{
 .btn:visited{
     background-color: #95B9C7;
 }
+#projects{
+    margin-top: 56px;
+    padding-top: 30px;
+}
+.h-proj{
+    overflow: auto;
+    display: flex;
+    justify-content: space-between;
+}
+.h-proj > div{
+    width: 90%; 
+}
 
 /* For mobile viewers */
 @media only screen and (max-width: 600px) {
