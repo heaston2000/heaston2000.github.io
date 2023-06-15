@@ -5,9 +5,8 @@ let scalarInputs = []; // vector for inputs to neurons
 let neurons = []; // vector for neurons
 
 // learning rule parameters
-const learningRate = 0.05;
+let learningRate = 0.05;
 const k = 0.1;
-let threshold = 0.15;
 
 // variables specifically for visual inputs
 const IMGRESIZEWIDTH = 30;
@@ -27,7 +26,7 @@ let colorLow, colorHigh; // for assigning outputs
 
 function setup() {
   createCanvas(800, 800);
-  strokeWeight(0.01)
+  strokeWeight(0.1)
 
   colorLow = color("blue");
   colorHigh = color("orange");
@@ -50,10 +49,10 @@ function setup() {
   inputSizeInput.input(updateChanges);
 
   showNeurons = createCheckbox('Show Neurons', true);
-  showNeurons.position(3* width/4 - 120, height+15);
+  showNeurons.position(3* width/4 - 100, height+15);
 
   showWeights = createCheckbox('Show Weights', true);
-  showWeights.position(3* width/4 + 20, height+15);
+  showWeights.position(3* width/4+20, height+15);
 
   updateChanges();
 
@@ -61,6 +60,21 @@ function setup() {
 
 function draw() {
   background(0);
+  let outputscalePos = width/2;
+  if (inputType.value() === "Visual Input") {
+    outputscalePos = 3 * width / 4 + 20;
+  }
+  fill(255);
+  text('output level', outputscalePos-30, height - 85);
+  text('0', outputscalePos - 100, height - 35);
+  text((Math.round(maxOutput * 100)/100).toString(), outputscalePos + 100, height-35);
+  noStroke();
+  for (let i = 0; i < 200; i++) {
+		fill(lerpColor(colorLow, colorHigh, i/200)); 
+		rect(outputscalePos - 100 + i, height-80, 1, 30);
+	}
+
+  // to slow down the stime scale along which weare looking at
   counter = counter + 1;
   if (counter === 20) {
     counter = 0;
@@ -106,6 +120,11 @@ function updateChanges(){
   maxOutput = 0;
   threshold = 0.15;
 
+  if (learningRule.value() === "Oja's Rule") {
+    learningRate = 0.05;
+  } else {
+    learningRate = 0.25;
+  }
   if (inputType.value() === "Random Pattern Input" || inputType.value() === "Random Noise Input") {
     for (let i=0; i < inputSizeInput.value(); i++) {
       scalarInputs.push(new ScalarInput(40, ((i+0.5) * ((height - (2 * RADIUS)) / inputSizeInput.value())), random()));
@@ -122,7 +141,7 @@ function updateChanges(){
       layerSize = constrain(layerSize-1, 1, 100);
   
         for (let k=0; k < layerSize; k++){
-          let n = new Neuron(width/4, k * height/layerSize, lastLayer, weights);
+          let n = new Neuron(width/4, k * height/layerSize, lastLayer, weights, false);
           neurons.push(n);
           newlastLayerUpdate.push(n);
           newWeights.push(random()/inputSizeInput.value());
@@ -135,6 +154,9 @@ function updateChanges(){
     capture = createCapture(VIDEO);
     console.log("Entering Visual Input Mode");
     capture.hide();
+    c = capture.get(0,0, capture.width, capture.height);
+    c.resize(IMGRESIZEWIDTH, IMGRESIZEHEIGHT);
+
 
     neurons = [];
     let weights = [];
@@ -143,19 +165,26 @@ function updateChanges(){
     heatMap = createGraphics(IMGRESIZEWIDTH, IMGRESIZEHEIGHT);
 
     for (let i=0; i < TOTALPIXELS; i++){
-      let s = new ScalarInput(40, (i+0.5) * ((height - (2*RADIUS)) / TOTALPIXELS), 0);
+      let s = new ScalarInput(40, (i+0.5) * ((height + (2*RADIUS)) / TOTALPIXELS), 0); // x, y, output
       scalarInputs.push(s);
       weights.push(random() / 9);
       lastLayer.push(s);
 
-      if (i % 9 == 0){
-        neurons.push(new Neuron(width / 4, i * height / TOTALPIXELS, lastLayer, weights));
+      if (i % 9 == 0 || i === TOTALPIXELS-1){ // to fix the last couple of pixels not being given a neuron to connect with
+        neurons.push(new Neuron(width / 4, i * height / TOTALPIXELS, lastLayer, weights, false));
         weights = [];
         lastLayer = [];
       }
     }
+
+    // create the last neuron on the end
+    let neuronsCopy = neurons;
+    let endWeights = Array.from({length: neurons.length}, () => Math.random());
+    let endNeuron = new Neuron(3*width / 4, height / 2, neuronsCopy, endWeights, true);
+    neurons.push(endNeuron);
+
     // now assign each scalar input to the value of the pixel of the image
-    let counterScale = 0;
+    let counterScale = 0; // for determining where in the scalar input array we are
     for (let x=0; x < IMGRESIZEWIDTH; x += 3){
       for (let y=0; y < IMGRESIZEHEIGHT; y += 3){
         for (let xoffset = 0; xoffset < 3; xoffset++){
@@ -172,31 +201,35 @@ function updateChanges(){
 
 
 class Neuron {
-  constructor(x,y, inputNeighbors, inputWeights){
+  constructor(x,y, inputNeighbors, inputWeights, lastNeuro){
     this.position = createVector(x,y);
     this.positionDestination = createVector(x,y);
     this.inputWeights = inputWeights;
     this.inputNeighbors = inputNeighbors;
-    this.firing = false;
     this.output = 0;
     this.radius = RADIUS;
     this.velocity = createVector(0, 0);
     this.force = createVector(0, 0);
     this.next = createVector(0,0);
-    //this.threshold = 0.1;
+    this.threshold = 0.1;
+    this.lastNeuro = lastNeuro; // if this neuron is at the end or not
   }
 
   update(){
-    this.firing = false;
     if (counter === 0) {
       this.output = 0;
       if (learningRule.value() === "Oja's Rule") {
+        learningRate = 0.05
         for (let i=0; i<this.inputWeights.length; i++){
           this.output += this.inputWeights[i] * this.inputNeighbors[i].output;
         }
+        if (this.output === NaN) {
+          this.output = 0;
+        }
         this.ojasUpdate();
-      } else if (learningRule.value() === "BCM Rule") { // then we normalize the inputs
+      } else if (learningRule.value() === "BCM Rule") { // OUTPUT OS NAN FIRST
         let inputSum = 0;
+        learningRate = 0.25;
         for (const n of this.inputNeighbors){
           //print(n.output);
           inputSum += n.output;
@@ -209,8 +242,7 @@ class Neuron {
         this.thresholdUpdate();
       }
 
-
-      if (this.output > maxOutput) {
+      if (this.output > maxOutput && !this.lastNeuro) {
         maxOutput = this.output;
       }
     }
@@ -230,8 +262,14 @@ class Neuron {
       this.positionDestination.y += this.inputNeighbors[i].position.y * this.inputWeights[i] / totalWeight;
     }
 
-    this.position.y = lerp(this.position.y, this.positionDestination.y, 0.1);
-    this.position.x =  lerp(this.position.x, this.positionDestination.x, 0.1);
+    if (!this.lastNeuro){
+      this.position.y = lerp(this.position.y, this.positionDestination.y, 0.1);
+      this.position.x =  lerp(this.position.x, this.positionDestination.x, 0.1);
+    } else {
+      this.position.x =  3 * width /4;
+      this.position.y = height / 2;
+    }
+    
   }
 
   draw(){
@@ -240,7 +278,7 @@ class Neuron {
     if (showNeurons.checked()){
       circle(this.position.x, this.position.y, this.radius*2);
     }
-    if (inputType.value() === "Visual Input") {
+    if (inputType.value() === "Visual Input" && !this.lastNeuro) {
       heatMap.loadPixels();
       for (let n=0; n<this.inputNeighbors.length; n++) {
         let currNeighbor = this.inputNeighbors[n]
@@ -250,7 +288,11 @@ class Neuron {
       }
       heatMap.updatePixels();  
     }
-    
+    if (this.lastNeuro){
+      fill(255);
+      text("output:", this.position.x+20, this.position.y+5)
+      text((Math.round(this.output * 100)/100).toString(), this.position.x+30, this.position.y+18);
+    }
     this.position = this.next;
   }
 
@@ -258,18 +300,22 @@ class Neuron {
     if (showWeights.checked() && neurons.length) {
       stroke(255);
       for (let i=0; i<this.inputWeights.length; i++){
-        strokeWeight(map(this.inputWeights[i], 0,1, 0, 10));
+        strokeWeight(map(this.inputWeights[i], 0, 1, 0, 10));
         line(this.position.x, this.position.y, this.inputNeighbors[i].position.x, this.inputNeighbors[i].position.y);
       }
     }
   }
 
   ojasUpdate(){ // update function for the weights of Oja's rule
+    let layerScale = 1;
+    if (this.lastNeuro){
+      layerScale = 1 / (neurons.length - 1);
+    } 
     for (let i = 0; i<this.inputWeights.length; i++) {
       let inputI = this.inputNeighbors[i].output;
-      let penalization = learningRate * (this.output ** 2) * this.inputWeights[i];
-      let hebbian = learningRate * this.output * this.inputNeighbors[i].output;
-      this.inputWeights[i] = constrain(this.inputWeights[i] + hebbian - penalization, 0, 1);
+      let penalization = layerScale * learningRate * (this.output ** 2) * this.inputWeights[i];
+      let hebbian = layerScale * learningRate * this.output * this.inputNeighbors[i].output;
+      this.inputWeights[i] = constrain(this.inputWeights[i] + hebbian - penalization, 0.01, 1);
     }
   }
 
@@ -278,14 +324,22 @@ class Neuron {
     for (const n of this.inputNeighbors){
       inputSum += n.output;
     } 
+    if (inputSum == NaN) {
+      inputSum = 0;
+    }
+    
     for (let i = 0; i<this.inputWeights.length; i++) {
-      let inputI = this.inputNeighbors[i].output /inputSum;
-      this.inputWeights[i] = this.inputWeights[i] + learningRate * (this.output * inputI * (this.output - threshold));//, 0, 1);
+      //print(this.inputWeights[i]);
+      let inputI = this.inputNeighbors[i].output / inputSum;
+      if (inputI == NaN) {
+        inputI = 0;
+      }
+      this.inputWeights[i] = constrain(this.inputWeights[i] + learningRate * (this.output * inputI * (this.output - this.threshold)), 0.01, 1);
     }
   }
 
   thresholdUpdate(){ // update function for the threshold of the BCM rule
-    threshold = threshold + 1.7 * learningRate * (this.output ** 2 - threshold);
+    this.threshold = this.threshold + (1.7 * learningRate * ((this.output ** 2) - this.threshold));
   }
 
 }
@@ -309,6 +363,8 @@ class ScalarInput {
   }
 
   draw(){
+    stroke(255);
+    strokeWeight(0.1);
     if (showNeurons.checked()) {
       fill(lerpColor(colorLow, colorHigh, map(this.output, 0, maxOutput, 0, 1)));
       circle(this.position.x, this.position.y, this.radius*2);
