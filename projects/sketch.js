@@ -40,20 +40,20 @@ function setup() {
   inputType.changed(updateChanges);
 
   learningRule = createSelect();
-  learningRule.position(180, height + 15);
+  learningRule.position(200, height + 15);
   learningRule.option("Oja's Rule");
   learningRule.option("BCM Rule");
   learningRule.changed(updateChanges);
 
   inputSizeInput = createInput(inputSize);
-  inputSizeInput.position(290, height+12);
+  inputSizeInput.position(310, height+12);
   inputSizeInput.input(updateChanges);
 
   showNeurons = createCheckbox('Show Neurons', true);
-  showNeurons.position(3* width/4 - 140, height+15);
+  showNeurons.position(3* width/4 - 120, height+15);
 
   showWeights = createCheckbox('Show Weights', true);
-  showWeights.position(3* width/4, height+15);
+  showWeights.position(3* width/4 + 20, height+15);
 
   updateChanges();
 
