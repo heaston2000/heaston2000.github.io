@@ -15,6 +15,7 @@ const TOTALPIXELS = IMGRESIZEWIDTH * IMGRESIZEHEIGHT;
 let capture; // global variable for getting input from camera
 let c, heatMap; // global variable for resized image and heatmap to overlay it with
 
+const BASE = 100; // start of drawing
 const RADIUS = 15; // radius of neurons
 let inputSize = 4;  // original input size
 let inputSizeInput; // UI variable for controlling how many inputs (does not matter in visual input case)
@@ -25,7 +26,7 @@ let colorLow, colorHigh; // for assigning outputs
 
 
 function setup() {
-  createCanvas(800, 800);
+  createCanvas(800, 800 + BASE);
   strokeWeight(0.1)
 
   colorLow = color("blue");
@@ -83,10 +84,10 @@ function draw() {
   if (inputType.value() === "Visual Input") {
     c = capture.get(0,0, capture.width, capture.height);
     c.resize(IMGRESIZEWIDTH, IMGRESIZEHEIGHT);
-    image(c, width - c.width * 5, 0, c.width*5, c.height*5, 0,0);
-    image(c, width - c.width * 5, c.height*5, c.width*5, c.height*5, 0,0);
+    image(c, width - c.width * 5, BASE, c.width*5, c.height*5, 0,0);
+    image(c, width - c.width * 5, BASE+c.height*5, c.width*5, c.height*5, 0,0);
     heatMap.updatePixels();
-    image(heatMap, width - c.width * 5, c.height*5, c.width*5, c.height*5, 0,0);
+    image(heatMap, width - c.width * 5, BASE+c.height*5, c.width*5, c.height*5, 0,0);
 
     // now assign each scalar input to the value of the pixel of the image
     for (let i=0; i<scalarInputs.length; i++){
@@ -127,7 +128,7 @@ function updateChanges(){
   }
   if (inputType.value() === "Random Pattern Input" || inputType.value() === "Random Noise Input") {
     for (let i=0; i < inputSizeInput.value(); i++) {
-      scalarInputs.push(new ScalarInput(40, ((i+0.5) * ((height - (2 * RADIUS)) / inputSizeInput.value())), random()));
+      scalarInputs.push(new ScalarInput(40, BASE + ((i+0.5) * (( (height-BASE)  - (2 * RADIUS)) / inputSizeInput.value())), random()));
       weights.push(random() / inputSizeInput.value());
     }
     neurons = [];
@@ -141,7 +142,7 @@ function updateChanges(){
       layerSize = constrain(layerSize-1, 1, 100);
   
         for (let k=0; k < layerSize; k++){
-          let n = new Neuron(width/4, k * height/layerSize, lastLayer, weights, false);
+          let n = new Neuron(width/4, k * height/layerSize + BASE, lastLayer, weights, false);
           neurons.push(n);
           newlastLayerUpdate.push(n);
           newWeights.push(random()/inputSizeInput.value());
@@ -165,13 +166,13 @@ function updateChanges(){
     heatMap = createGraphics(IMGRESIZEWIDTH, IMGRESIZEHEIGHT);
 
     for (let i=0; i < TOTALPIXELS; i++){
-      let s = new ScalarInput(40, (i+0.5) * ((height + (2*RADIUS)) / TOTALPIXELS), 0); // x, y, output
+      let s = new ScalarInput(40, BASE + (i+0.5) * (( (height - BASE) + (2*RADIUS)) / TOTALPIXELS), 0); // x, y, output
       scalarInputs.push(s);
       weights.push(random() / 9);
       lastLayer.push(s);
 
       if (i % 9 == 0 || i === TOTALPIXELS-1){ // to fix the last couple of pixels not being given a neuron to connect with
-        neurons.push(new Neuron(width / 4, i * height / TOTALPIXELS, lastLayer, weights, false));
+        neurons.push(new Neuron(width / 4, i * height / TOTALPIXELS + BASE, lastLayer, weights, false));
         weights = [];
         lastLayer = [];
       }
@@ -180,7 +181,7 @@ function updateChanges(){
     // create the last neuron on the end
     let neuronsCopy = neurons;
     let endWeights = Array.from({length: neurons.length}, () => Math.random());
-    let endNeuron = new Neuron(3*width / 4, height / 2, neuronsCopy, endWeights, true);
+    let endNeuron = new Neuron(3*width / 4, height / 2 + BASE, neuronsCopy, endWeights, true);
     neurons.push(endNeuron);
 
     // now assign each scalar input to the value of the pixel of the image
@@ -267,7 +268,7 @@ class Neuron {
       this.position.x =  lerp(this.position.x, this.positionDestination.x, 0.1);
     } else {
       this.position.x =  3 * width /4;
-      this.position.y = height / 2;
+      this.position.y = height / 2 + BASE;
     }
     
   }
