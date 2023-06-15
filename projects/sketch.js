@@ -52,7 +52,7 @@ function setup() {
   showNeurons.position(3* width/4 - 100, height+15);
 
   showWeights = createCheckbox('Show Weights', true);
-  showWeights.position(3* width/4+20, height+15);
+  showWeights.position(3* width/4+40, height+15);
 
   updateChanges();
 
