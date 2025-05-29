@@ -50,8 +50,8 @@ body{
 
 /* Nav-blurb */
 #nav-blrb{
-    margin-top: 10px;
-    padding-top: 30px;
+    margin-top: 5px;
+    padding-top: 10px;
 }
 .h-nav{
     overflow: auto;
@@ -65,7 +65,7 @@ body{
 /* Coursework */
 #coursework{
     margin-top: 56px;
-    padding-top: 30px;
+    padding-top: 30000000px;
 }
 .h-course{
     overflow: auto;
