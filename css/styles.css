@@ -40,9 +40,11 @@ body{
 .h-intro > div{
     width: 90%; 
 }
-.selfpic{
+.selfpic {
+    display: flex;
+    justify-content: center;  /* horizontal */
+    align-items: center;      /* vertical */
     overflow: auto;
-    text-align: center;
 }
 #selfpic{
     width: 80%;
