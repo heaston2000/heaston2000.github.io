@@ -47,7 +47,7 @@ body{
     overflow: auto;
 }
 #selfpic{
-    height: 300px;
+    width: 80%;
 }
 
 /* Nav-blurb */
